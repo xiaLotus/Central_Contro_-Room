@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按鈕測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e0e0e0;
+        }
+        h2 {
+            color: #333;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>按鈕測試</h1>
+        <button onclick="sendRequest()">點擊我</button>
+        <div id="response"></div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h2>即時日誌</h2>
+        <button onclick="loadLogs()" style="background-color: #28a745;">重新載入日誌</button>
+        <div id="logs" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap;"></div>
+    </div>
+
+    <script>
+        async function sendRequest() {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = '發送中...';
+            responseDiv.className = '';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/button-click', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                responseDiv.textContent = `${data.message} (${data.timestamp})`;
+                responseDiv.className = 'success';
+                
+                // 自動重新載入日誌
+                setTimeout(loadLogs, 500);
+            } catch (error) {
+                responseDiv.textContent = '發生錯誤：' + error.message;
+                responseDiv.className = 'error';
+            }
+        }
+        
+        async function loadLogs() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.textContent = '載入中...';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/logs');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    logsDiv.textContent = data.logs.join('');
+                    // 自動捲動到底部
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                } else {
+                    logsDiv.textContent = '載入日誌失敗：' + data.message;
+                }
+            } catch (error) {
+                logsDiv.textContent = '載入日誌錯誤：' + error.message;
+            }
+        }
+        
+        // 頁面載入時自動載入日誌
+        window.onload = function() {
+            loadLogs();
+            // 每 5 秒自動更新日誌
+            setInterval(loadLogs, 5000);
+        };
+    </script>
+</body>
+</html>
